@@ -108,9 +108,15 @@ export const PacketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const handleWebSocketMessage = useCallback(
     (data: any) => {
-      console.log("📨 WebSocket message received");
+      if (!data || typeof data !== "object") {
+        console.warn("⚠️ Ignored invalid WebSocket message:", data);
+        return;
+      }
 
-      if (data.type === "PACKET_RESULT") {
+      console.log("📨 WebSocket message received:", data);
+
+      // ✅ Safe dispatch for PACKET_RESULT
+      if (data?.type === "PACKET_RESULT" && data.packet && data.log) {
         dispatch({ type: "ADD_PACKET", payload: data.packet });
         dispatch({ type: "ADD_LOG", payload: data.log });
 
@@ -118,25 +124,56 @@ export const PacketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           type: "SET_SIMULATION_STATUS",
           payload: {
             ...state.simulationStatus,
-            packet_count: state.simulationStatus.packet_count + 1,
+            packet_count: (state.simulationStatus.packet_count || 0) + 1,
           },
         });
-      } else if (data.status === "started") {
+        return;
+      }
+
+      // ✅ Handle simulation status messages safely
+      if (data?.type === "simulation_status") {
+        const msg = data.message ?? "Simulation status updated";
+        console.log(`📡 ${msg}`);
+
+        dispatch({
+          type: "SET_SIMULATION_STATUS",
+          payload: {
+            ...state.simulationStatus,
+            is_running: data.status === "started",
+          },
+        });
+        return;
+      }
+
+      // ✅ Handle other known message types
+      if (data?.status === "started") {
         console.log("🚀 Simulation started via WebSocket");
         dispatch({
           type: "SET_SIMULATION_STATUS",
           payload: { ...state.simulationStatus, is_running: true },
         });
-      } else if (data.status === "stopped") {
+        return;
+      }
+
+      if (data?.status === "stopped") {
         console.log("🛑 Simulation stopped via WebSocket");
         dispatch({
           type: "SET_SIMULATION_STATUS",
           payload: { ...state.simulationStatus, is_running: false },
         });
+        return;
+      }
+
+      // ✅ Catch-all for unexpected packets
+      if (data?.message) {
+        console.log(`ℹ️ Message: ${data.message}`);
+      } else {
+        console.warn("⚠️ Unhandled WebSocket payload:", data);
       }
     },
     [state.simulationStatus]
   );
+
 
   const handleWebSocketConnected = useCallback(() => {
     console.log("✅ WebSocket connected and stable");

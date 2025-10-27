@@ -79,8 +79,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       let socket: WebSocket | null = null;
 
       try {
-        socket = new WebSocket("ws://localhost:5001/ws");
-
+        socket = new WebSocket(`${window.location.origin.replace(/^http/, "ws")}/ws`);
         // ✅ Handle “closed before connection established” gracefully
         socket.onerror = (event: Event) => {
           const msg = (event as any)?.message || "";
@@ -123,13 +122,20 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
 
       socket.onmessage = (event) => {
         try {
+          if (!event.data) return; // Ignore empty events
+
           const data = JSON.parse(event.data);
-          setLastMessage(data);
-          onMessage?.(data);
+          if (data && typeof data === "object") {
+            setLastMessage(data);
+            onMessage?.(data);
+          } else {
+            warn("⚠️ Received invalid WebSocket payload:", data);
+          }
         } catch (err) {
           errlog("❌ Failed to parse WebSocket message:", err);
         }
-      };
+    };
+
 
       socket.onclose = (event) => {
         setIsConnected(false);

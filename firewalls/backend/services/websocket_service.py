@@ -167,11 +167,12 @@ def handle_start_simulation():
     if not simulation_running:
         simulation_running = True
         start_mock_simulation()
-        broadcast_message({
-            "type": "simulation_status",
-            "status": "started",
-            "message": "Simulation started"
-        })
+        # broadcast_message({
+        #     "type": "simulation_status",
+        #     "status": "started",
+        #     "message": "Simulation started"
+        # })
+        broadcast_message(None)
 
 
 def handle_stop_simulation():
@@ -183,10 +184,17 @@ def handle_stop_simulation():
         "message": "Simulation stopped"
     })
 
+from flask import current_app
 
 def simulation_loop():
-    """Background random packet generator"""
+    """Background random packet generator (Flask context-safe)"""
     protocols = ["TCP", "UDP", "ICMP"]
+
+    try:
+        app = current_app
+    except RuntimeError:
+        app = None
+
     while simulation_running:
         time.sleep(2)
         packet = {
@@ -195,7 +203,15 @@ def simulation_loop():
             "port": random.choice([22, 53, 80, 443, 8080]),
             "protocol": random.choice(protocols),
         }
-        handle_simulate_packet(packet)
+
+        if app:
+            with app.app_context():
+                print(f"📦 Simulated packet: {packet}")
+                handle_simulate_packet(packet)
+        else:
+            print(f"[No Flask Context] Simulated packet: {packet}")
+            handle_simulate_packet(packet)
+
 
 
 def start_mock_simulation():
