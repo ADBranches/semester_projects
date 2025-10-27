@@ -32,18 +32,18 @@ def create_app():
     # Allow Render + Vercel + local origins
     # -----------------------------------------------------------------
     allowed_origins = [
+        "https://frontend-lsqi.onrender.com",
+        "https://semester-projects.onrender.com",
+        "https://semester-projects.vercel.app",
         "http://localhost:5173",
         "http://127.0.0.1:5173",
-        "https://semester-projects.onrender.com",
-        "https://frontend-lsqi.onrender.com",
-        "https://semester-projects.vercel.app",
-        "https://semester-projects-*.vercel.app",
     ]
 
     CORS(
         app,
-        resources={r"/api/*": {"origins": allowed_origins}},
+        resources={r"/*": {"origins": allowed_origins}},
         supports_credentials=True,
+        expose_headers=["Content-Type", "Authorization"],
         allow_headers=["Content-Type", "Authorization"],
         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"]
     )
