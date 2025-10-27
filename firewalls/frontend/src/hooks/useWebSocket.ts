@@ -1,6 +1,7 @@
 /**
  * Native WebSocket Hook (Graceful Offline Handling + Smart Reconnect)
  * Author: Edwin Bwambale
+ * Environment-ready for both localhost and hosted setups.
  */
 
 import { useState, useEffect, useRef, useCallback } from "react";
@@ -35,24 +36,32 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
   const silentOffline = useRef(false);
   const isManualDisconnect = useRef(false);
 
-  // Exponential backoff (1s → 2s → 4s → 8s → max 10s)
+  // ✅ Dynamically detect correct WS URL
+  const WS_URL =
+    import.meta.env.VITE_WS_URL ||
+    `${window.location.origin.replace(/^http/, "ws")}/ws`;
+
+  const API_HEALTH_URL =
+    import.meta.env.VITE_API_BASE?.replace(/\/api$/, "") + "/api/health" ||
+    "http://localhost:5001/api/health";
+
+  // Exponential backoff (1s → 2s → 4s → ... up to 10s)
   const getReconnectDelay = (attempt: number) =>
     Math.min(10000, Math.pow(2, attempt) * 1000);
 
-  // ✅ lightweight backend reachability check
+  // Lightweight backend reachability check
   const checkBackendOnline = async () => {
     try {
-      const res = await fetch("http://localhost:5001/api/health", { method: "GET" });
+      const res = await fetch(API_HEALTH_URL, { method: "GET" });
       if (res.ok) return true;
     } catch (_) {}
     return false;
   };
 
   const connect = useCallback(async () => {
-    // Avoid reconnect spam
-    if (isConnecting.current || (ws.current && ws.current.readyState === WebSocket.OPEN)) return;
+    if (isConnecting.current || (ws.current && ws.current.readyState === WebSocket.OPEN))
+      return;
 
-    // Check backend before trying to connect
     const backendUp = await checkBackendOnline();
     if (!backendUp) {
       if (!silentOffline.current) {
@@ -63,7 +72,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       return;
     }
 
-    // Clean up previous stale socket
+    // Clean up stale socket
     if (ws.current) {
       try {
         ws.current.close();
@@ -74,40 +83,9 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
     try {
       isConnecting.current = true;
       setConnectionStatus("connecting");
-      log("🌐 WebSocket: Attempting connection...");
+      log(`🌐 WebSocket connecting → ${WS_URL}`);
 
-      let socket: WebSocket | null = null;
-
-      try {
-        socket = new WebSocket(`${window.location.origin.replace(/^http/, "ws")}/ws`);
-        // ✅ Handle “closed before connection established” gracefully
-        socket.onerror = (event: Event) => {
-          const msg = (event as any)?.message || "";
-          if (msg.includes("closed before the connection")) {
-            if (DEBUG) console.warn("⚠️ Backend not ready yet — retrying silently...");
-            setTimeout(connect, 1000);
-            socket?.close();
-            setConnectionStatus("offline");
-            isConnecting.current = false;
-            return;
-          }
-
-          if (!silentOffline.current) {
-            warn("⚠️ WebSocket unreachable — retrying silently...");
-            silentOffline.current = true;
-          }
-          setIsConnected(false);
-          setConnectionStatus("offline");
-          isConnecting.current = false;
-          onError?.(new Error("WebSocket error (offline)"));
-        };
-      } catch (e) {
-        warn("⚠️ Socket creation failed — backend likely unreachable");
-        setConnectionStatus("offline");
-        isConnecting.current = false;
-        return;
-      }
-
+      const socket = new WebSocket(WS_URL);
       ws.current = socket;
 
       socket.onopen = () => {
@@ -122,27 +100,46 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
 
       socket.onmessage = (event) => {
         try {
-          if (!event.data) return; // Ignore empty events
-
+          if (!event.data) return;
           const data = JSON.parse(event.data);
           if (data && typeof data === "object") {
             setLastMessage(data);
             onMessage?.(data);
           } else {
-            warn("⚠️ Received invalid WebSocket payload:", data);
+            warn("⚠️ Invalid WebSocket payload:", data);
           }
         } catch (err) {
           errlog("❌ Failed to parse WebSocket message:", err);
         }
-    };
+      };
 
+      socket.onerror = (event) => {
+        const msg = (event as any)?.message || "";
+        if (msg.includes("closed before the connection")) {
+          if (DEBUG) warn("⚠️ Backend not ready yet — retrying silently...");
+          setTimeout(connect, 1000);
+          socket?.close();
+          setConnectionStatus("offline");
+          isConnecting.current = false;
+          return;
+        }
+
+        if (!silentOffline.current) {
+          warn("⚠️ WebSocket unreachable — retrying silently...");
+          silentOffline.current = true;
+        }
+
+        setIsConnected(false);
+        setConnectionStatus("offline");
+        isConnecting.current = false;
+        onError?.(new Error("WebSocket error (offline)"));
+      };
 
       socket.onclose = (event) => {
         setIsConnected(false);
         setConnectionStatus("disconnected");
         isConnecting.current = false;
 
-        // Skip retry if manually disconnected
         if (isManualDisconnect.current) return;
 
         if ([1001, 1006].includes(event.code)) {
@@ -150,7 +147,6 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
             reconnectAttempts.current++;
             const delay = getReconnectDelay(reconnectAttempts.current);
             setConnectionStatus("retrying");
-
             if (DEBUG) warn(`⏳ Retrying WebSocket in ${delay / 1000}s...`);
 
             clearTimeout(reconnectTimeout.current);
@@ -205,7 +201,6 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
     reconnectAttempts.current = 0;
   }, []);
 
-  // Lifecycle management
   useEffect(() => {
     connect();
     return () => disconnect();

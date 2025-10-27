@@ -1,19 +1,28 @@
 /**
  * FirewallX API Client
  * Author: Edwin Bwambale
- * Description: Graceful API layer with silent offline handling.
+ * Description: Graceful API layer with environment flexibility and silent offline handling.
  */
 
 import type { ApiResponse } from "../types";
 
-const API_BASE_URL = "http://localhost:5001/api";
+// ✅ Dynamic base URL: supports both local and hosted environments
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE ||
+  (typeof window !== "undefined"
+    ? `${window.location.origin.replace(/\/$/, "")}/api`
+    : "http://localhost:5001/api");
+
 const DEBUG = import.meta.env.VITE_DEBUG_LOGS === "true" || false;
 const log = (...args: any[]) => DEBUG && console.log(...args);
 const warn = (...args: any[]) => DEBUG && console.warn(...args);
 const error = (...args: any[]) => DEBUG && console.error(...args);
 
 class ApiClient {
-  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  private async request<T>(
+    endpoint: string,
+    options: RequestInit = {}
+  ): Promise<T> {
     const url = `${API_BASE_URL}${endpoint}`;
 
     const config: RequestInit = {
@@ -42,13 +51,15 @@ class ApiClient {
 
       return result.data as T;
     } catch (err: any) {
-      // Handle backend offline or unreachable (no spam)
+      // Handle backend offline or unreachable
       if (err instanceof TypeError && err.message.includes("Failed to fetch")) {
         if (DEBUG) warn("⚠️ Backend unreachable — returning fallback error");
-        throw new Error("Cannot connect to backend. Please ensure it’s running on port 5001.");
+        throw new Error(
+          "Cannot connect to backend. Please ensure it’s running or check network settings."
+        );
       }
 
-      // Network or server errors
+      // Other network or server errors
       error("❌ API Error:", err.message || err);
       throw new Error(err.message || "Unknown API error occurred.");
     }
@@ -69,7 +80,7 @@ class ApiClient {
     return this.request<T>(endpoint, { method: "DELETE" });
   }
 
-  // Health check endpoint with safe fallback
+  // ✅ Health check with safe fallback
   async healthCheck(): Promise<{ status: string; service: string }> {
     try {
       return await this.get<{ status: string; service: string }>("/health");
