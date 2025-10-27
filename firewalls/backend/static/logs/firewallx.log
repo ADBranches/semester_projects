@@ -5,3 +5,6 @@
 [2025-10-27 06:16:21] Packet 5: BLOCK (Matched rule #1 (BLOCK))
 [2025-10-27 06:16:21] Packet 6: ALLOW (No matching rule found)
 [2025-10-27 06:16:22] Packet 7: ALLOW (No matching rule found)
+[2025-10-27 08:15:42] Packet 8: BLOCK (Matched rule #1 (BLOCK))
+[2025-10-27 08:15:43] Packet 9: ALLOW (No matching rule found)
+[2025-10-27 08:15:44] Packet 10: ALLOW (No matching rule found)
