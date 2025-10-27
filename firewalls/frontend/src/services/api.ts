@@ -13,6 +13,8 @@ const API_BASE_URL =
     ? `${window.location.origin.replace(/\/$/, "")}/api`
     : "http://localhost:5001/api");
 
+console.log("🔥 API_BASE_URL =>", API_BASE_URL);
+
 const DEBUG = import.meta.env.VITE_DEBUG_LOGS === "true" || false;
 const log = (...args: any[]) => DEBUG && console.log(...args);
 const warn = (...args: any[]) => DEBUG && console.warn(...args);
@@ -36,7 +38,6 @@ class ApiClient {
       ...options,
       
     };
-    log("🔥 API_BASE_URL =>", API_BASE_URL);
 
     try {
       log(`🌐 API Request: ${options.method || "GET"} ${url}`);
