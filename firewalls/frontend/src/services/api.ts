@@ -27,13 +27,16 @@ class ApiClient {
 
     const config: RequestInit = {
       mode: "cors",
-      credentials: "omit",
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
+        "Accept": "application/json",
         ...options.headers,
       },
       ...options,
+      
     };
+    log("🔥 API_BASE_URL =>", API_BASE_URL);
 
     try {
       log(`🌐 API Request: ${options.method || "GET"} ${url}`);
