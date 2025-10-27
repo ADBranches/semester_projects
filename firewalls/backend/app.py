@@ -29,22 +29,20 @@ def create_app():
 
     # -----------------------------------------------------------------
     # ✅ FLASK-CORS CONFIGURATION
-    # Render and Vercel need HTTPS and wildcard subdomain allowance.
+    # Allow Render + Vercel + local origins
     # -----------------------------------------------------------------
     allowed_origins = [
         "http://localhost:5173",
         "http://127.0.0.1:5173",
         "https://semester-projects.onrender.com",
+        "https://frontend-lsqi.onrender.com",
         "https://semester-projects.vercel.app",
         "https://semester-projects-*.vercel.app",
     ]
-    
+
     CORS(
         app,
-        resources={r"/api/*": {"origins": [
-            "https://frontend-lsqi.onrender.com",  # ✅ your frontend domain
-            "http://localhost:5173",               # ✅ for local dev
-        ]}},
+        resources={r"/api/*": {"origins": allowed_origins}},
         supports_credentials=True,
         allow_headers=["Content-Type", "Authorization"],
         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"]
@@ -67,6 +65,13 @@ def create_app():
         return jsonify({
             "message": "🔥 FirewallX backend is running!",
             "websocket_enabled": WEBSOCKET_ENABLED
+        }), 200
+
+    @app.route("/api/health", methods=["GET"])
+    def health():
+        return jsonify({
+            "service": "FirewallX Backend",
+            "status": "ok"
         }), 200
 
     return app
