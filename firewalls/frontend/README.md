@@ -71,7 +71,7 @@ frontend/
 ### 1️⃣ Clone the repository
 
 ```bash
-git clone https://github.com/<the-username>/firewallx.git
+git clone https://github.com/adbranches/firewallx.git
 cd firewallx/frontend
 ```
 
