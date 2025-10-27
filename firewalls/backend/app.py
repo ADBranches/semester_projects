@@ -28,6 +28,9 @@ def create_app():
         resources={
             r"/api/*": {"origins": ["http://localhost:5173", "http://127.0.0.1:5173"]},
             r"/ws": {"origins": ["http://localhost:5173", "http://127.0.0.1:5173"]},
+            # allow vercel frontend deployment
+            r"/api/*": {"origins": ["https://semester-projects-*.vercel.app"]},
+            r"/ws": {"origins": ["https://semester-projects-*.vercel.app"]},
             },
         expose_headers=["Content-Type", "Authorization"],
         allow_headers=["Content-Type", "Authorization"],
