@@ -24,21 +24,17 @@ def create_app():
     app.url_map.strict_slashes = False
     
     # ✅ SIMPLIFIED CORS - Let Flask-CORS handle everything
-    CORS(app, resources={
-        r"/*": {
-            "origins": [
-                "http://localhost:5173",
-                "http://127.0.0.1:5173",
-                "https://semester-projects.vercel.app",
-                "https://semester-projects-*.vercel.app",
-                "https://semester-projects.onrender.com",
-                "wss://semester-projects.onrender.com"
-            ]
-        }
-    },
+    CORS(app,
+        resources={r"/*": {"origins": [
+            "http://localhost:5173",
+            "http://127.0.0.1:5173",
+            "https://semester-projects.onrender.com",
+            "https://semester-projects.vercel.app",
+            "https://semester-projects-*.vercel.app"
+        ]}},
     expose_headers=["Content-Type", "Authorization"],
     allow_headers=["Content-Type", "Authorization"],
-    supports_credentials=False)
+    supports_credentials=True)
 
 
     
