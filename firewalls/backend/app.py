@@ -25,27 +25,21 @@ def create_app():
     
     # ✅ SIMPLIFIED CORS - Let Flask-CORS handle everything
     CORS(app, resources={
-        r"/api/*": {
-            "origins": [
-                "http://localhost:5173",
-                "http://127.0.0.1:5173",
-                "https://semester-projects.vercel.app",
-                "https://semester-projects-*.vercel.app"
-            ]
-        },
-        r"/ws": {
+        r"/*": {
             "origins": [
                 "http://localhost:5173",
                 "http://127.0.0.1:5173",
                 "https://semester-projects.vercel.app",
                 "https://semester-projects-*.vercel.app",
-                "wss://semester-projects.onrender.com"  # ✅ Add WebSocket origin
+                "https://semester-projects.onrender.com",
+                "wss://semester-projects.onrender.com"
             ]
         }
     },
-expose_headers=["Content-Type", "Authorization"],
-allow_headers=["Content-Type", "Authorization"],
-supports_credentials=False)
+    expose_headers=["Content-Type", "Authorization"],
+    allow_headers=["Content-Type", "Authorization"],
+    supports_credentials=False)
+
 
     
     init_db(app)
