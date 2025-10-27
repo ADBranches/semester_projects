@@ -67,11 +67,11 @@ def create_app():
             "websocket_enabled": WEBSOCKET_ENABLED
         }), 200
 
-    @app.route("/api/health", methods=["GET"])
-    def health():
+    @app.route("/api/_health", methods=["GET"])
+    def api_health():
         return jsonify({
-            "service": "FirewallX Backend",
-            "status": "ok"
+            "message": "🔥 FirewallX backend is running!",
+            "websocket_enabled": WEBSOCKET_ENABLED
         }), 200
 
     return app
