@@ -1,0 +1,4 @@
+[2025-10-26 13:51:26] Packet 1: ALLOW (No matching rule found)
+[2025-10-26 13:55:07] Packet 2: BLOCK (Matched rule #1 (BLOCK))
+[2025-10-26 14:06:50] Packet 3: ALLOW (No matching rule found)
+[2025-10-26 14:08:25] Packet 4: BLOCK (Matched rule #3 (BLOCK))
