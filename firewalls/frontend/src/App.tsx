@@ -117,6 +117,7 @@ function App() {
                   FirewallX is a real-time firewall simulation and visualization
                   tool built to help you understand network security operations,
                   packet inspection, and traffic filtering.
+                    <h1 className="text-lg text-gray-400 max-w-2xl mx-auto">GROUP 4 CSF</h1>
                 </p>
               </div>
             }
